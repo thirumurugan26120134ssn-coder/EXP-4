@@ -69,7 +69,11 @@ jobs:
               }
             }
           }'
-
+      - name: Generate AI Prompt-Based Summary
+        if: always()
+        run: |
+          chmod +x scripts/summarize_report.sh
+          ./scripts/summarize_report.sh
       # Step 6: Upload generated health report
       - name: Upload health report
         if: always()

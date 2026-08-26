@@ -49,6 +49,27 @@ jobs:
         run: |
           ./tests/test_health_monitor.sh
 
+      - name: Update Agile Project - Done
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          gh api graphql -f query='
+          mutation {
+            updateProjectV2ItemFieldValue(
+              input: {
+                projectId: "PVT_kwHOElnf_M4BhfnL"
+                itemId: "PVTI_lAHOElnf_M4BhfnLzg4DISs"
+                fieldId: "PVTSSF_lAHOElnf_M4BhfnLzhgbKUs"
+                value: { singleSelectOptionId: "98236657" }
+              }
+            ) {
+              projectV2Item {
+                id
+              }
+            }
+          }'
+
       # Step 6: Upload generated health report
       - name: Upload health report
         if: always()

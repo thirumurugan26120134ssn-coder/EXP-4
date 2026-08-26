@@ -9,11 +9,13 @@ on:
     - cron: "0 9 * * *"
 
   workflow_dispatch:
+
 permissions:
   contents: write
   issues: write
   pull-requests: write
- repository-projects: write
+  repository-projects: write
+
 jobs:
   health-monitor:
 
@@ -34,6 +36,15 @@ jobs:
           mkdir -p reports
           mkdir -p logs
 
+      - name: Mark Issue #1 as In Progress
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit 1 \
+            --add-label "in-progress" \
+            --remove-label "done" \
+            --remove-label "blocked"
+
       - name: Run health monitor
         run: |
           ./scripts/health_monitor.sh
@@ -42,20 +53,31 @@ jobs:
         run: |
           ./tests/test_health_monitor.sh
 
-- name: Update Agile task on success
+      - name: Mark Issue #1 as Done
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue comment 1 --body "✅ CI/CD pipeline completed successfully. Task can be moved to Done."
+          gh issue edit 1 \
+            --add-label "done" \
+            --remove-label "in-progress" \
+            --remove-label "blocked"
 
-      - name: Update Agile task on failure
+          gh issue comment 1 \
+            --body "CI/CD pipeline completed successfully. Issue #1 marked as DONE."
+
+      - name: Mark Issue #1 as Blocked
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue comment 1 --body "❌ CI/CD pipeline failed. Task requires investigation."
+          gh issue edit 1 \
+            --add-label "blocked" \
+            --remove-label "in-progress" \
+            --remove-label "done"
 
+          gh issue comment 1 \
+            --body "CI/CD pipeline failed. Issue #1 marked as BLOCKED. Investigation required."
 
       - name: Upload health report
         if: always()

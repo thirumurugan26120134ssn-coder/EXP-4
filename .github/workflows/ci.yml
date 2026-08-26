@@ -23,62 +23,33 @@ jobs:
 
     steps:
 
+      # Step 1: Download the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Give execute permission to scripts
       - name: Make scripts executable
         run: |
           chmod +x scripts/*.sh
           chmod +x tests/*.sh
 
+      # Step 3: Create directories required by the scripts
       - name: Create required directories
         run: |
           mkdir -p reports
           mkdir -p logs
 
-      - name: Mark Issue #1 as In Progress
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue edit 1 \
-            --add-label "in-progress" \
-            --remove-label "done" \
-            --remove-label "blocked"
-
+      # Step 4: Run Linux health monitoring
       - name: Run health monitor
         run: |
           ./scripts/health_monitor.sh
 
+      # Step 5: Run automated tests
       - name: Run automated tests
         run: |
           ./tests/test_health_monitor.sh
 
-      - name: Mark Issue #1 as Done
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue edit 1 \
-            --add-label "done" \
-            --remove-label "in-progress" \
-            --remove-label "blocked"
-
-          gh issue comment 1 \
-            --body "CI/CD pipeline completed successfully. Issue #1 marked as DONE."
-
-      - name: Mark Issue #1 as Blocked
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue edit 1 \
-            --add-label "blocked" \
-            --remove-label "in-progress" \
-            --remove-label "done"
-
-          gh issue comment 1 \
-            --body "CI/CD pipeline failed. Issue #1 marked as BLOCKED. Investigation required."
-
+      # Step 6: Upload generated health report
       - name: Upload health report
         if: always()
         uses: actions/upload-artifact@v4

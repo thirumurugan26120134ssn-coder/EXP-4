@@ -1,0 +1,65 @@
+name: Linux Health Monitor CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+  schedule:
+    - cron: "0 9 * * *"
+
+  workflow_dispatch:
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+ repository-projects: write
+jobs:
+  health-monitor:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/*.sh
+          chmod +x tests/*.sh
+
+      - name: Create required directories
+        run: |
+          mkdir -p reports
+          mkdir -p logs
+
+      - name: Run health monitor
+        run: |
+          ./scripts/health_monitor.sh
+
+      - name: Run automated tests
+        run: |
+          ./tests/test_health_monitor.sh
+
+- name: Update Agile task on success
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment 1 --body "✅ CI/CD pipeline completed successfully. Task can be moved to Done."
+
+      - name: Update Agile task on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment 1 --body "❌ CI/CD pipeline failed. Task requires investigation."
+
+
+      - name: Upload health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report
+          path: reports/health_report.txt
